@@ -8,5 +8,7 @@ type Config struct {
 }
 
 func Read() (Config, error) {
+	var config Config
 
+	return config, nil
 }
