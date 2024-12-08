@@ -2,6 +2,8 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
+	"io"
 	"os"
 )
 
@@ -12,33 +14,65 @@ type Config struct {
 	CurrentUserName *string `json:"current_user_name"`
 }
 
-func Read() (Config, error) {
+func (c Config) SetUser(username string) {
 
-	var config Config
+	*c.CurrentUserName = username
+
+	configpath, _ := getConfigPath()
+
+	body, err := json.MarshalIndent(c, "", "  ")
+	if err != nil {
+		fmt.Println("Error marshaling struct to JSON:", err)
+		return
+	}
+
+	file, err := os.Create(configpath)
+	if err != nil {
+		fmt.Println("Error creating file:", err)
+		return
+	}
+	defer file.Close()
+
+	// Write the JSON data to the file
+	_, err = file.Write(body)
+	if err != nil {
+		fmt.Println("Error writing to file:", err)
+		return
+	}
+
+}
+
+func getConfigPath() (string, error) {
+
 	configpath, err := os.UserHomeDir()
 	if err != nil {
-		return config, err
+		return "", err
 	}
-	configfile := configpath + "/" + CONFIGFILE
+	return (configpath + "/" + CONFIGFILE), nil
+}
 
-	file, err := os.Open(configfile)
+func Read(config *Config) error {
+
+	configpath, err := getConfigPath()
 	if err != nil {
-		return config, err
+		return err
+	}
+
+	file, err := os.Open(configpath)
+	if err != nil {
+		return err
 	}
 
 	defer file.Close()
 
-	body := make([]byte, 0)
-
-	_, err = file.Read(body)
+	body, err := io.ReadAll(file)
 	if err != nil {
-		return config, err
+		return err
 	}
 
 	if err = json.Unmarshal(body, &config); err != nil {
-		println("Unmarshall error")
-		return config, err
+		return err
 	}
 
-	return config, nil
+	return nil
 }
