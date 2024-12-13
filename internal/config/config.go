@@ -14,22 +14,27 @@ type Config struct {
 	CurrentUserName *string `json:"current_user_name"`
 }
 
-func (c Config) SetUser(username string) {
+func (c *Config) SetUser(username string) error {
 
-	*c.CurrentUserName = username
+	c.CurrentUserName = &username
+
+	return Write(*c)
+}
+
+func Write(config Config) error {
 
 	configpath, _ := getConfigPath()
 
-	body, err := json.MarshalIndent(c, "", "  ")
+	body, err := json.MarshalIndent(config, "", "  ")
 	if err != nil {
 		fmt.Println("Error marshaling struct to JSON:", err)
-		return
+		return err
 	}
 
 	file, err := os.Create(configpath)
 	if err != nil {
 		fmt.Println("Error creating file:", err)
-		return
+		return err
 	}
 	defer file.Close()
 
@@ -37,9 +42,9 @@ func (c Config) SetUser(username string) {
 	_, err = file.Write(body)
 	if err != nil {
 		fmt.Println("Error writing to file:", err)
-		return
+		return err
 	}
-
+	return nil
 }
 
 func getConfigPath() (string, error) {
