@@ -7,7 +7,7 @@ import (
 )
 
 type state struct {
-	config config.Config
+	config *config.Config
 }
 
 type command struct {
@@ -15,10 +15,32 @@ type command struct {
 	args []string
 }
 
+type commands struct {
+	function map[string]func(*state, command) error
+}
+
+func (c *commands) register(name string, f func(*state, command) error) {
+	c.function[name] = f
+}
+
+func (c *commands) run(s *state, cmd command) error {
+
+	return nil
+}
+
 func handlerLogin(s *state, cmd command) error {
 	if len(cmd.args) == 0 {
 		return fmt.Errorf("Must supply a username")
 	}
+
+	err := s.config.SetUser(cmd.args[0])
+
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("User has been set to: ", s.config.CurrentUserName)
+
 	return nil
 }
 
